@@ -17,7 +17,7 @@ export default {
     rules: [
       {
         test: /\.(c|sa|sc)ss$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
+        use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'sass-loader'],
       },
       {
         test: /\.html$/,
@@ -35,7 +35,7 @@ export default {
       template: path.resolve(__dirname, 'index.html'),
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].scss',
+      filename: 'style.css',
     }),
   ],
 
