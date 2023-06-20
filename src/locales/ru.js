@@ -5,5 +5,8 @@ export default {
       invalidRSS: 'Ресурс не содержит валидный RSS',
       recurringURL: 'RSS уже существует',
     },
+    statusMessages: {
+      loaded: 'RSS успешно загружен',
+    },
   },
 };
