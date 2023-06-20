@@ -129,6 +129,7 @@ const render = (path, value) => {
     });
     titleForPosts.textContent = 'Посты';
     divCardBodyPost.append(titleForPosts);
+    ulForPosts.innerHTML = '';
     ulForPosts.prepend(...elementLi);
     divCardBorderPost.append(divCardBodyPost, ulForPosts);
     mainContainerForPosts.innerHTML = '';
@@ -237,4 +238,26 @@ export default () => {
         renderErors(watchedState.errors, elements, i18Instance);
       });
   });
+
+  const checkUpdate = () => {
+    setTimeout(() => {
+      if (watchedState.rssForm.field.url.length) {
+        const allUrls = watchedState.rssForm.field.url;
+        allUrls.forEach((url) => {
+          axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+            .then((responce) => {
+              const rssData = createID(rssParser(responce));
+              watchedState.posts.concat(...rssData.post);
+            })
+            .catch((er) => {
+              watchedState.errors = er.message;
+              watchedState.rssForm.processState = 'loadingIsFail';
+              renderErors(watchedState.errors, elements, i18Instance);
+            });
+        });
+      }
+      checkUpdate();
+    }, 5000);
+  };
+  checkUpdate();
 };
