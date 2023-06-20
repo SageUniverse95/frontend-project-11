@@ -158,8 +158,7 @@ const render = (path, value) => {
       p.textContent = description;
       li.append(h3, p);
       li.addEventListener('click', (e) => {
-        e.preventDefault();
-        renderModal('abc', e.target.id);
+        renderModal(value, e.target.id);
       });
       return li;
     });
@@ -224,6 +223,7 @@ export default () => {
             watchedState.rssForm.field.url.push(url);
             watchedState.feeds.push(rssData.feed);
             watchedState.posts.push(...rssData.post);
+            form.reset();
             renderLoadMessage(elements, i18Instance);
           })
           .catch((er) => {
