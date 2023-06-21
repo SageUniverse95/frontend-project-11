@@ -5,21 +5,6 @@ import axios from 'axios';
 import { uniqueId } from 'lodash';
 import ru from './locales/ru.js';
 
-const renderModal = (posts, id) => {
-  const modalHeader = document.querySelector('.modal-header > h5');
-  const modalBody = document.querySelector('.modal-body');
-  const modalFooter = document.querySelector('.modal-footer > a');
-  const testPost = document.querySelector(`[data-id="${id}"]`);
-  testPost.classList.remove('fw-bold');
-  testPost.classList.add('fw-normal', 'link-secondary');
-  const filtredPost = posts.filter(({ postID }) => postID === id);
-  filtredPost.forEach(({ titlePost, descriptionPost, link }) => {
-    modalHeader.textContent = titlePost;
-    modalBody.textContent = descriptionPost;
-    modalFooter.href = link;
-  });
-};
-
 const renderErors = (errors, elements, i18Instance) => {
   const pWithErrorMessage = document.querySelector('.feedback');
   pWithErrorMessage.classList.add('text-danger');
@@ -45,8 +30,8 @@ const createID = (rssContent) => {
     description: rssContent.description,
     id: uniqueId(),
   };
-  const post = rssContent.items.map((item) => ({ ...item, id: feed.id, postID: uniqueId() }));
-  return { feed, post };
+  const posts = rssContent.items.map((item) => ({ ...item, id: feed.id, postID: uniqueId() }));
+  return { feed, posts };
 };
 
 const rssParser = (rssStream) => {
@@ -73,7 +58,26 @@ const rssParser = (rssStream) => {
   return { title, description, items };
 };
 
-const render = (path, value) => {
+const render = (state) => (path, value) => {
+  console.log(path, value);
+  if (path === 'uiState.listOfViewedPosts') {
+    value.forEach(({ postID }) => {
+      const testPost = document.querySelector(`[data-id="${postID}"]`);
+      testPost.classList.remove('fw-bold');
+      testPost.classList.add('fw-normal', 'link-secondary');
+    });
+  }
+  if (path === 'uiState.modalID') {
+    const modalHeader = document.querySelector('.modal-header > h5');
+    const modalBody = document.querySelector('.modal-body');
+    const modalFooter = document.querySelector('.modal-footer > a');
+    const currentPostForModal = state.posts.filter(({ postID }) => postID === value);
+    currentPostForModal.forEach(({ titlePost, descriptionPost, link }) => {
+      modalHeader.textContent = titlePost;
+      modalBody.textContent = descriptionPost;
+      modalFooter.href = link;
+    });
+  }
   if (path === 'rssForm.processState') {
     const btn = document.querySelector('[type="submit"]');
     const input = document.querySelector('[id="url-input"]');
@@ -120,10 +124,6 @@ const render = (path, value) => {
       button.dataset.bsToggle = 'modal';
       button.dataset.bsTarget = '#modal';
       button.textContent = 'Просмотр';
-      li.addEventListener('click', (e) => {
-        const currentId = e.target.dataset.id;
-        renderModal(value, currentId);
-      });
       li.append(a, button);
       return li;
     });
@@ -158,9 +158,6 @@ const render = (path, value) => {
       h3.textContent = title;
       p.textContent = description;
       li.append(h3, p);
-      li.addEventListener('click', (e) => {
-        renderModal(value, e.target.id);
-      });
       return li;
     });
     mainContainerForFeeds.innerHTML = '';
@@ -182,10 +179,13 @@ export default () => {
   const state = {
     rssForm: {
       processState: 'filling',
-      valid: true,
       field: {
         url: [],
       },
+    },
+    uiState: {
+      listOfViewedPosts: [],
+      modalID: null,
     },
     feeds: [],
     posts: [],
@@ -204,7 +204,8 @@ export default () => {
     mixed: { notOneOf: 'recurringURL' },
     string: { url: 'invalidURL' },
   });
-  const watchedState = onChange(state, render);
+  const divWithPosts = document.querySelector('.posts');
+  const watchedState = onChange(state, render(state));
   const form = document.querySelector('.rss-form');
   const elements = {
     input: document.querySelector('.form-control'),
@@ -223,7 +224,7 @@ export default () => {
             watchedState.rssForm.processState = 'loadingIsComplete';
             watchedState.rssForm.field.url.push(url);
             watchedState.feeds.push(rssData.feed);
-            watchedState.posts.push(...rssData.post);
+            watchedState.posts.push(...rssData.posts);
             form.reset();
             renderLoadMessage(elements, i18Instance);
           })
@@ -238,16 +239,30 @@ export default () => {
         renderErors(watchedState.errors, elements, i18Instance);
       });
   });
-
+  divWithPosts.addEventListener('click', (e) => {
+    e.preventDefault();
+    const currentID = e.target.dataset.id;
+    if (currentID) {
+      const currentPost = { postID: currentID };
+      watchedState.uiState.listOfViewedPosts.push(currentPost);
+      if (e.target.type === 'button') {
+        watchedState.uiState.modalID = currentID;
+      }
+    }
+  });
+  // Функция обновления контента
   const checkUpdate = () => {
     setTimeout(() => {
       if (watchedState.rssForm.field.url.length) {
         const allUrls = watchedState.rssForm.field.url;
+
         allUrls.forEach((url) => {
           axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
             .then((responce) => {
-              const rssData = createID(rssParser(responce));
-              watchedState.posts.concat(...rssData.post);
+              const newPosts = createID(rssParser(responce));
+              const test1 = watchedState.posts;
+              const test2 = newPosts.posts.filter(({ titlePost }) => !test1.some((post) => post.titlePost === titlePost));
+              watchedState.posts.push(...test2);
             })
             .catch((er) => {
               watchedState.errors = er.message;
