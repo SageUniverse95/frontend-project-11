@@ -61,8 +61,8 @@ const rssParser = (rssStream) => {
 const render = (state) => (path, value) => {
   console.log(path, value);
   if (path === 'uiState.listOfViewedPosts') {
-    value.forEach(({ postID }) => {
-      const testPost = document.querySelector(`[data-id="${postID}"]`);
+    value.forEach(({ currentIdPost }) => {
+      const testPost = document.querySelector(`[data-id="${currentIdPost}"]`);
       testPost.classList.remove('fw-bold');
       testPost.classList.add('fw-normal', 'link-secondary');
     });
@@ -72,6 +72,7 @@ const render = (state) => (path, value) => {
     const modalBody = document.querySelector('.modal-body');
     const modalFooter = document.querySelector('.modal-footer > a');
     const currentPostForModal = state.posts.filter(({ postID }) => postID === value);
+    console.log(currentPostForModal);
     currentPostForModal.forEach(({ titlePost, descriptionPost, link }) => {
       modalHeader.textContent = titlePost;
       modalBody.textContent = descriptionPost;
@@ -124,6 +125,12 @@ const render = (state) => (path, value) => {
       button.dataset.bsToggle = 'modal';
       button.dataset.bsTarget = '#modal';
       button.textContent = 'Просмотр';
+      state.uiState.listOfViewedPosts.forEach(({ currentIdPost }) => {
+        if (currentIdPost === postID) {
+          a.classList.add('fw-normal', 'link-secondary');
+          a.classList.remove('fw-bold');
+        }
+      });
       li.append(a, button);
       return li;
     });
@@ -243,7 +250,7 @@ export default () => {
     e.preventDefault();
     const currentID = e.target.dataset.id;
     if (currentID) {
-      const currentPost = { postID: currentID };
+      const currentPost = { currentIdPost: currentID };
       watchedState.uiState.listOfViewedPosts.push(currentPost);
       if (e.target.type === 'button') {
         watchedState.uiState.modalID = currentID;
@@ -260,8 +267,8 @@ export default () => {
           axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
             .then((responce) => {
               const newPosts = createID(rssParser(responce));
-              const test1 = watchedState.posts;
-              const test2 = newPosts.posts.filter(({ titlePost }) => !test1.some((post) => post.titlePost === titlePost));
+              const oldPosts = watchedState.posts;
+              const test2 = newPosts.posts.filter(({ titlePost }) => !oldPosts.some((post) => post.titlePost === titlePost));
               watchedState.posts.push(...test2);
             })
             .catch((er) => {
