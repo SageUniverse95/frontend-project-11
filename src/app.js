@@ -59,7 +59,8 @@ const rssParser = (rssStream) => {
 };
 
 const render = (state) => (path, value) => {
-  console.log(path, value);
+  const inputTest = document.querySelector('[id="url-input"]');
+  inputTest.focus();
   if (path === 'uiState.listOfViewedPosts') {
     value.forEach(({ currentIdPost }) => {
       const testPost = document.querySelector(`[data-id="${currentIdPost}"]`);
@@ -137,7 +138,7 @@ const render = (state) => (path, value) => {
     titleForPosts.textContent = 'Посты';
     divCardBodyPost.append(titleForPosts);
     ulForPosts.innerHTML = '';
-    ulForPosts.prepend(...elementLi);
+    ulForPosts.append(...elementLi);
     divCardBorderPost.append(divCardBodyPost, ulForPosts);
     mainContainerForPosts.innerHTML = '';
     mainContainerForPosts.append(divCardBorderPost);
@@ -247,7 +248,6 @@ export default () => {
       });
   });
   divWithPosts.addEventListener('click', (e) => {
-    e.preventDefault();
     const currentID = e.target.dataset.id;
     if (currentID) {
       const currentPost = { currentIdPost: currentID };
@@ -266,16 +266,12 @@ export default () => {
         allUrls.forEach((url) => {
           axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
             .then((responce) => {
-              const newPosts = createID(rssParser(responce));
+              const currentPost = createID(rssParser(responce));
               const oldPosts = watchedState.posts;
-              const test2 = newPosts.posts.filter(({ titlePost }) => !oldPosts.some((post) => post.titlePost === titlePost));
-              watchedState.posts.push(...test2);
+              const items = currentPost.posts.filter(({ titlePost }) => !oldPosts.some((post) => post.titlePost === titlePost));
+              watchedState.posts.push(...items);
             })
-            .catch((er) => {
-              watchedState.errors = er.message;
-              watchedState.rssForm.processState = 'loadingIsFail';
-              renderErors(watchedState.errors, elements, i18Instance);
-            });
+            .catch(() => {});
         });
       }
       checkUpdate();
