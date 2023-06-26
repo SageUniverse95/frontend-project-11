@@ -8,5 +8,12 @@ export default {
     statusMessages: {
       loaded: 'RSS успешно загружен',
     },
+    titles: {
+      feeds: 'Фиды',
+      posts: 'Посты',
+    },
+    buttons: {
+      viewBtn: 'Просмотр',
+    },
   },
 };
