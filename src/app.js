@@ -149,9 +149,10 @@ export default () => {
             allUrls.forEach(({ url }) => {
               contentUpload(url)
                 .then((responce) => {
-                  const currentPost = contenPreparation(rssParse(responce), url);
+                  const current = contenPreparation(rssParse(responce), url);
                   const oldPosts = watchedState.posts;
-                  const items = currentPost.posts.filter(({ titlePost }) => !oldPosts.some((post) => post.titlePost === titlePost));
+                  const oldTitles = new Set(oldPosts.map((post) => post.titlePost));
+                  const items = current.posts.filter(({ titlePost }) => !oldTitles.has(titlePost));
                   watchedState.posts.push(...items);
                 })
                 .catch(() => {});

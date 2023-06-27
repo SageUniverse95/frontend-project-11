@@ -140,7 +140,6 @@ const renderErorsNetwork = (state, elements, i18) => {
   const { errorMessage } = state.downloadProcess.errors;
   const pWithErrorMessage = document.querySelector('.feedback');
   if (errorMessage === 'Network Error') {
-    console.log('imhere');
     pWithErrorMessage.textContent = i18('errors.networkError');
   } else {
     pWithErrorMessage.textContent = i18(`errors.${errorMessage}`);
