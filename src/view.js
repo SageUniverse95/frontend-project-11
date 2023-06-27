@@ -1,6 +1,6 @@
 const render = (state, i18) => (path, value) => {
-  const inputTest = document.querySelector('[id="url-input"]');
-  inputTest.focus();
+  /* const inputTest = document.querySelector('[id="url-input"]');
+  inputTest.focus(); */
   if (path === 'uiState.listOfViewedPosts') {
     value.forEach(({ currentIdPost }) => {
       const testPost = document.querySelector(`[data-id="${currentIdPost}"]`);
@@ -117,6 +117,10 @@ const render = (state, i18) => (path, value) => {
 };
 const renderLoadMessage = (state, elements, i18) => {
   if (state.downloadProcess.state === 'processed') {
+    const inputTest = document.querySelector('[id="url-input"]');
+    const test = document.querySelector('.rss-form');
+    test.reset();
+    inputTest.focus();
     const pWithLodaedMessage = document.querySelector('.feedback');
     pWithLodaedMessage.textContent = i18('statusMessages.loaded');
     pWithLodaedMessage.classList.remove('text-danger');
@@ -135,8 +139,13 @@ const renderErorsForm = (state, elements, i18) => {
 const renderErorsNetwork = (state, elements, i18) => {
   const { errorMessage } = state.downloadProcess.errors;
   const pWithErrorMessage = document.querySelector('.feedback');
-  pWithErrorMessage.textContent = i18(`errors.${errorMessage}`);
-  elements.input.classList.remove('is-invalid');
+  if (errorMessage === 'Network Error') {
+    console.log('imhere');
+    pWithErrorMessage.textContent = i18('errors.networkError');
+  } else {
+    pWithErrorMessage.textContent = i18(`errors.${errorMessage}`);
+    elements.input.classList.remove('is-invalid');
+  }
 };
 export {
   render,
