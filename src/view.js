@@ -1,15 +1,106 @@
-const render = (state, i18) => (path, value) => {
-  /* const inputTest = document.querySelector('[id="url-input"]');
-  inputTest.focus(); */
+/* const renderErorsForm = (state, elements, i18) => {
+  const { errorMessage } = state;
+  elements.p.classList.add('text-danger');
+  elements.p.textContent = i18(`errors.${errorMessage}`);
+  elements.input.classList.add('is-invalid');
+};
+
+const renderErorsNetwork = (state, elements, i18) => {
+  const { errorMessage } = state;
+  if (errorMessage === 'Network Error') {
+    elements.p.textContent = i18('errors.networkError');
+  } else {
+    elements.p.textContent = i18(`errors.${errorMessage}`);
+    elements.input.classList.remove('is-invalid');
+  }
+}; */
+
+const renderListOfViewedPosts = (state) => {
+  state.forEach(({ currentIdPost }) => {
+    const currentPost = document.querySelector(`[data-id="${currentIdPost}"]`);
+    currentPost.classList.remove('fw-bold');
+    currentPost.classList.add('fw-normal', 'link-secondary');
+  });
+};
+
+const renderModal = (state, currentId, elements) => {
+  const currentPostForModal = state.posts.filter(({ postID }) => postID === currentId);
+  currentPostForModal.forEach(({ titlePost, descriptionPost, link }) => {
+    elements.modal.header.textContent = titlePost;
+    elements.modal.body.textContent = descriptionPost;
+    elements.modal.footer.href = link;
+  });
+};
+
+const renderErrors = (state, elements, i18) => {
+  if (state.isValidationError) {
+    elements.main.p.classList.add('text-danger');
+    elements.main.p.textContent = i18(`errors.${state.message}`);
+    elements.main.input.classList.add('is-invalid');
+  }
+  if (state.isParsingError) {
+    elements.main.p.textContent = i18('errors.invalidRSS');
+    elements.main.input.classList.remove('is-invalid');
+  }
+  if (state.isAxiosError) {
+    elements.main.p.textContent = i18('errors.networkError');
+  }
+};
+
+const renderLoadMessage = (state, elements, i18) => {
+  if (state === 'processing') {
+    elements.main.btn.disabled = true;
+    elements.main.input.disabled = true;
+  }
+  if (state === 'processed') {
+    elements.main.input.focus();
+    elements.main.form.reset();
+    elements.main.btn.disabled = false;
+    elements.main.input.disabled = false;
+    const pWithLodaedMessage = document.querySelector('.feedback');
+    pWithLodaedMessage.textContent = i18('statusMessages.loaded');
+    pWithLodaedMessage.classList.remove('text-danger');
+    pWithLodaedMessage.classList.add('text-success');
+    elements.main.input.classList.remove('is-invalid');
+  }
+  if (state === 'failed') {
+    elements.main.btn.disabled = false;
+    elements.main.input.disabled = false;
+  }
+};
+
+export default (state, elements, i18) => (path, value) => {
+  if (path === 'downloadProcess.errors') {
+    renderErrors(value, elements, i18);
+  }
+  if (path === 'form.errors') {
+    renderErrors(value, elements, i18);
+  }
+  if (path === 'form.state') {
+    if (value === 'processing') {
+      elements.main.input.disabled = true;
+      elements.main.btn.disabled = true;
+    }
+    if (value === 'processed') {
+      elements.main.input.disabled = false;
+      elements.main.btn.disabled = false;
+    }
+    if (value === 'invalid') {
+      elements.main.input.disabled = false;
+      elements.main.btn.disabled = false;
+    }
+  }
   if (path === 'uiState.listOfViewedPosts') {
-    value.forEach(({ currentIdPost }) => {
+    renderListOfViewedPosts(value);
+    /* value.forEach(({ currentIdPost }) => {
       const testPost = document.querySelector(`[data-id="${currentIdPost}"]`);
       testPost.classList.remove('fw-bold');
       testPost.classList.add('fw-normal', 'link-secondary');
-    });
+    }); */
   }
   if (path === 'modal.modalID') {
-    const modalHeader = document.querySelector('.modal-header > h5');
+    renderModal(state, value, elements);
+    /* const modalHeader = document.querySelector('.modal-header > h5');
     const modalBody = document.querySelector('.modal-body');
     const modalFooter = document.querySelector('.modal-footer > a');
     const currentPostForModal = state.posts.filter(({ postID }) => postID === value);
@@ -17,10 +108,11 @@ const render = (state, i18) => (path, value) => {
       modalHeader.textContent = titlePost;
       modalBody.textContent = descriptionPost;
       modalFooter.href = link;
-    });
+    }); */
   }
   if (path === 'downloadProcess.state') {
-    const btn = document.querySelector('[type="submit"]');
+    renderLoadMessage(value, elements, i18);
+    /* const btn = document.querySelector('[type="submit"]');
     const input = document.querySelector('[id="url-input"]');
     if (value === 'processing') {
       btn.disabled = true;
@@ -33,7 +125,7 @@ const render = (state, i18) => (path, value) => {
     if (value === 'failed') {
       btn.disabled = false;
       input.disabled = false;
-    }
+    } */
   }
   if (path === 'posts') {
     const mainContainerForPosts = document.querySelector('.posts');
@@ -114,41 +206,4 @@ const render = (state, i18) => (path, value) => {
     divCardBorderFeeds.append(divCardBodyFeeds, ulForFeeds);
     mainContainerForFeeds.append(divCardBorderFeeds);
   }
-};
-const renderLoadMessage = (state, elements, i18) => {
-  if (state.downloadProcess.state === 'processed') {
-    const inputTest = document.querySelector('[id="url-input"]');
-    const test = document.querySelector('.rss-form');
-    test.reset();
-    inputTest.focus();
-    const pWithLodaedMessage = document.querySelector('.feedback');
-    pWithLodaedMessage.textContent = i18('statusMessages.loaded');
-    pWithLodaedMessage.classList.remove('text-danger');
-    pWithLodaedMessage.classList.add('text-success');
-    elements.input.classList.remove('is-invalid');
-  }
-};
-const renderErorsForm = (state, elements, i18) => {
-  const pWithErrorMessage = document.querySelector('.feedback');
-  const { errorMessage } = state.form.errors;
-  pWithErrorMessage.classList.add('text-danger');
-  pWithErrorMessage.textContent = i18(`errors.${errorMessage}`);
-  elements.input.classList.add('is-invalid');
-};
-
-const renderErorsNetwork = (state, elements, i18) => {
-  const { errorMessage } = state.downloadProcess.errors;
-  const pWithErrorMessage = document.querySelector('.feedback');
-  if (errorMessage === 'Network Error') {
-    pWithErrorMessage.textContent = i18('errors.networkError');
-  } else {
-    pWithErrorMessage.textContent = i18(`errors.${errorMessage}`);
-    elements.input.classList.remove('is-invalid');
-  }
-};
-export {
-  render,
-  renderErorsForm,
-  renderLoadMessage,
-  renderErorsNetwork,
 };

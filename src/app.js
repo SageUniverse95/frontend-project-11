@@ -4,23 +4,22 @@ import * as yup from 'yup';
 import axios from 'axios';
 import { uniqueId } from 'lodash';
 import ru from './locales/ru.js';
-import {
-  render, renderErorsForm, renderLoadMessage, renderErorsNetwork,
-} from './view.js';
-// загрузчик rss
+import rssParse from './parser.js';
+import render from './view.js';
+
 const contentUpload = (url) => {
-  const address = new URL(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`);
+  const address = new URL('/get', 'https://allorigins.hexlet.app');
+  address.searchParams.set('disableCache', 'true');
+  address.searchParams.set('url', `${url}`);
   return axios.get(address);
 };
 
-// функция которая создает массив линков для notOneOf
 const createLink = (state) => {
   const links = state.feeds.map(({ url }) => url);
   return links;
 };
 
-// Подумать как обойтись без этой функции,
-const contenPreparation = (rssContent, url) => {
+const contentPreparation = (rssContent, url) => {
   const feed = {
     title: rssContent.title,
     description: rssContent.description,
@@ -30,37 +29,13 @@ const contenPreparation = (rssContent, url) => {
   const posts = rssContent.items.map((item) => ({ ...item, id: feed.id, postID: uniqueId() }));
   return { feed, posts };
 };
-// Парсер
-const rssParse = (rssStream) => {
-  const parser = new DOMParser();
-  const rssContent = parser.parseFromString(rssStream.data.contents, 'application/xml');
-  if (rssContent.querySelector('parsererror')) {
-    throw new Error('invalidRSS');
-  }
-  const feedContent = rssContent.querySelector('channel');
-  const title = feedContent.querySelector('title').textContent;
-  const description = feedContent.querySelector('description').textContent;
-  const items = Array.from(rssContent.querySelectorAll('item'))
-    .map((post) => {
-      const titlePost = post.querySelector('title').textContent;
-      const descriptionPost = post.querySelector('description').textContent;
-      const link = post.querySelector('link').textContent;
-      const result = {
-        titlePost,
-        descriptionPost,
-        link,
-      };
-      return result;
-    });
-  return { title, description, items };
-};
 
 const checkValidate = (url, links) => {
   const schema = yup.string().trim().required().url()
     .notOneOf(links);
   return schema.validate(url);
 };
-// основная App функция
+
 export default () => {
   const state = {
     form: {
@@ -96,39 +71,48 @@ export default () => {
   })
     .then((i18) => {
       const divWithPosts = document.querySelector('.posts');
-      const watchedState = onChange(state, render(state, i18));
-      const form = document.querySelector('.rss-form');
       const elements = {
-        input: document.querySelector('.form-control'),
+        main: {
+          input: document.querySelector('.form-control'),
+          p: document.querySelector('.feedback'),
+          form: document.querySelector('.rss-form'),
+          btn: document.querySelector('[type="submit"]'),
+        },
+        modal: {
+          header: document.querySelector('.modal-header > h5'),
+          body: document.querySelector('.modal-body'),
+          footer: document.querySelector('.modal-footer > a'),
+        },
       };
+      const watchedState = onChange(state, render(state, elements, i18));
+      const form = document.querySelector('.rss-form');
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = new FormData(e.target);
         const url = data.get('url');
         const links = createLink(state);
+        watchedState.form.state = 'processing';
         checkValidate(url, links)
           .then(() => {
             watchedState.form.state = 'processed';
             watchedState.downloadProcess.state = 'processing';
             contentUpload(url)
               .then((response) => {
-                const rssData = contenPreparation(rssParse(response), url);
+                const rssData = contentPreparation(rssParse(response), url);
                 watchedState.downloadProcess.state = 'processed';
                 watchedState.feeds.push(rssData.feed);
                 watchedState.posts.push(...rssData.posts);
                 form.reset();
-                renderLoadMessage(state, elements, i18);
               })
               .catch((er) => {
-                watchedState.downloadProcess.errors = { errorMessage: er.message };
+                watchedState.downloadProcess.errors = er;
                 watchedState.downloadProcess.state = 'failed';
-                renderErorsNetwork(state, elements, i18);
               });
           })
           .catch((er) => {
-            watchedState.form.errors = { errorMessage: er.message };
+            er.isValidationError = true;
+            watchedState.form.errors = er;
             watchedState.form.state = 'invalid';
-            renderErorsForm(state, elements, i18);
           });
       });
       divWithPosts.addEventListener('click', (e) => {
@@ -141,7 +125,7 @@ export default () => {
           }
         }
       });
-      // Функция обновления контента
+
       const checkUpdate = () => {
         setTimeout(() => {
           if (watchedState.feeds.length) {
@@ -149,7 +133,7 @@ export default () => {
             allUrls.forEach(({ url }) => {
               contentUpload(url)
                 .then((responce) => {
-                  const current = contenPreparation(rssParse(responce), url);
+                  const current = contentPreparation(rssParse(responce), url);
                   const oldPosts = watchedState.posts;
                   const oldTitles = new Set(oldPosts.map((post) => post.titlePost));
                   const items = current.posts.filter(({ titlePost }) => !oldTitles.has(titlePost));
