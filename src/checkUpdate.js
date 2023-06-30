@@ -21,4 +21,4 @@ const checkUpdate = (watchedState, contentUpload, prepareRssContent, rssParse) =
       .finally(() => checkUpdate(watchedState, contentUpload, prepareRssContent, rssParse));
   }, 5000);
 };
-export default { checkUpdate };
+export default checkUpdate;
