@@ -1,20 +1,3 @@
-/* const renderErorsForm = (state, elements, i18) => {
-  const { errorMessage } = state;
-  elements.p.classList.add('text-danger');
-  elements.p.textContent = i18(`errors.${errorMessage}`);
-  elements.input.classList.add('is-invalid');
-};
-
-const renderErorsNetwork = (state, elements, i18) => {
-  const { errorMessage } = state;
-  if (errorMessage === 'Network Error') {
-    elements.p.textContent = i18('errors.networkError');
-  } else {
-    elements.p.textContent = i18(`errors.${errorMessage}`);
-    elements.input.classList.remove('is-invalid');
-  }
-}; */
-
 const renderListOfViewedPosts = (state) => {
   state.forEach(({ currentIdPost }) => {
     const currentPost = document.querySelector(`[data-id="${currentIdPost}"]`);
@@ -92,40 +75,12 @@ export default (state, elements, i18) => (path, value) => {
   }
   if (path === 'uiState.listOfViewedPosts') {
     renderListOfViewedPosts(value);
-    /* value.forEach(({ currentIdPost }) => {
-      const testPost = document.querySelector(`[data-id="${currentIdPost}"]`);
-      testPost.classList.remove('fw-bold');
-      testPost.classList.add('fw-normal', 'link-secondary');
-    }); */
   }
   if (path === 'modal.modalID') {
     renderModal(state, value, elements);
-    /* const modalHeader = document.querySelector('.modal-header > h5');
-    const modalBody = document.querySelector('.modal-body');
-    const modalFooter = document.querySelector('.modal-footer > a');
-    const currentPostForModal = state.posts.filter(({ postID }) => postID === value);
-    currentPostForModal.forEach(({ titlePost, descriptionPost, link }) => {
-      modalHeader.textContent = titlePost;
-      modalBody.textContent = descriptionPost;
-      modalFooter.href = link;
-    }); */
   }
   if (path === 'downloadProcess.state') {
     renderLoadMessage(value, elements, i18);
-    /* const btn = document.querySelector('[type="submit"]');
-    const input = document.querySelector('[id="url-input"]');
-    if (value === 'processing') {
-      btn.disabled = true;
-      input.disabled = true;
-    }
-    if (value === 'processed') {
-      btn.disabled = false;
-      input.disabled = false;
-    }
-    if (value === 'failed') {
-      btn.disabled = false;
-      input.disabled = false;
-    } */
   }
   if (path === 'posts') {
     const mainContainerForPosts = document.querySelector('.posts');

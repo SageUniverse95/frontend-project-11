@@ -19,7 +19,7 @@ const createLink = (state) => {
   return links;
 };
 
-const contentPreparation = (rssContent, url) => {
+const prepareRssContent = (rssContent, url) => {
   const feed = {
     title: rssContent.title,
     description: rssContent.description,
@@ -98,7 +98,7 @@ export default () => {
             watchedState.downloadProcess.state = 'processing';
             contentUpload(url)
               .then((response) => {
-                const rssData = contentPreparation(rssParse(response), url);
+                const rssData = prepareRssContent(rssParse(response), url);
                 watchedState.downloadProcess.state = 'processed';
                 watchedState.feeds.push(rssData.feed);
                 watchedState.posts.push(...rssData.posts);
@@ -120,29 +120,31 @@ export default () => {
         if (currentID) {
           const currentPost = { currentIdPost: currentID };
           watchedState.uiState.listOfViewedPosts.push(currentPost);
-          if (e.target.type === 'button') {
-            watchedState.modal.modalID = currentID;
-          }
+          watchedState.modal.modalID = currentID;
         }
       });
 
       const checkUpdate = () => {
+        const promises = [];
         setTimeout(() => {
           if (watchedState.feeds.length) {
             const allUrls = watchedState.feeds;
             allUrls.forEach(({ url }) => {
-              contentUpload(url)
-                .then((responce) => {
-                  const current = contentPreparation(rssParse(responce), url);
+              promises.push(contentUpload(url));
+              promises.forEach((promise) => {
+                promise.then((responce) => {
+                  const current = prepareRssContent(rssParse(responce), url);
                   const oldPosts = watchedState.posts;
                   const oldTitles = new Set(oldPosts.map((post) => post.titlePost));
                   const items = current.posts.filter(({ titlePost }) => !oldTitles.has(titlePost));
                   watchedState.posts.push(...items);
                 })
-                .catch(() => {});
+                  .catch(() => {});
+              });
             });
           }
-          checkUpdate();
+          Promise.all(promises)
+            .finally(() => checkUpdate());
         }, 5000);
       };
       checkUpdate();

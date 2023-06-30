@@ -15,11 +15,11 @@ frontend-project-11 %  make install
 ## Usage 
 
 Use your favorite rss feed
-![How to use guide!](assets/screen1.png "how to use")
+![How to use guide!](src/assets/screen1.png "how to use")
 
 And read the latest news
 
-![How to use guide!](assets/screen2.png "how to use")
+![How to use guide!](src/assets/screen2.png "how to use")
 
 
 
