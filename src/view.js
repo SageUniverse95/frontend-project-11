@@ -16,17 +16,17 @@ const renderModal = (state, currentId, elements) => {
 };
 
 const renderErrors = (state, elements, i18) => {
-  if (state.isValidationError) {
+  if (state.form.errors.isValidationError) {
     elements.main.p.classList.add('text-danger');
-    elements.main.p.textContent = i18(`errors.${state.message}`);
+    elements.main.p.textContent = i18(`errors.${state.form.errors.message}`);
     elements.main.input.classList.add('is-invalid');
   }
-  if (state.isParsingError) {
-    elements.main.p.textContent = i18('errors.invalidRSS');
+  if (state.downloadProcess.errors.isParsingError) {
+    elements.main.p.textContent = i18(`errors.${state.downloadProcess.errors.message}`);
     elements.main.input.classList.remove('is-invalid');
   }
-  if (state.isAxiosError) {
-    elements.main.p.textContent = i18('errors.networkError');
+  if (state.downloadProcess.errors.isAxiosError) {
+    elements.main.p.textContent = i18(`errors.${state.downloadProcess.errors.message}`);
   }
 };
 
@@ -36,15 +36,14 @@ const renderLoadMessage = (state, elements, i18) => {
     elements.main.input.disabled = true;
   }
   if (state === 'processed') {
-    elements.main.input.focus();
     elements.main.form.reset();
     elements.main.btn.disabled = false;
     elements.main.input.disabled = false;
-    const pWithLodaedMessage = document.querySelector('.feedback');
-    pWithLodaedMessage.textContent = i18('statusMessages.loaded');
-    pWithLodaedMessage.classList.remove('text-danger');
-    pWithLodaedMessage.classList.add('text-success');
+    elements.main.p.textContent = i18('statusMessages.loaded');
+    elements.main.p.classList.remove('text-danger');
+    elements.main.p.classList.add('text-success');
     elements.main.input.classList.remove('is-invalid');
+    elements.main.input.focus();
   }
   if (state === 'failed') {
     elements.main.btn.disabled = false;
@@ -53,11 +52,10 @@ const renderLoadMessage = (state, elements, i18) => {
 };
 
 export default (state, elements, i18) => (path, value) => {
-  if (path === 'downloadProcess.errors') {
-    renderErrors(value, elements, i18);
-  }
-  if (path === 'form.errors') {
-    renderErrors(value, elements, i18);
+  if (path === 'downloadProcess.state') {
+    if (value === 'failed') {
+      renderErrors(state, elements, i18);
+    }
   }
   if (path === 'form.state') {
     if (value === 'processing') {
@@ -69,6 +67,7 @@ export default (state, elements, i18) => (path, value) => {
       elements.main.btn.disabled = false;
     }
     if (value === 'invalid') {
+      renderErrors(state, elements, i18);
       elements.main.input.disabled = false;
       elements.main.btn.disabled = false;
     }

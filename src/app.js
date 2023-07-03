@@ -8,16 +8,11 @@ import rssParse from './parser.js';
 import render from './view.js';
 import checkUpdate from './checkUpdate.js';
 
-const contentUpload = (url) => {
+const createProxy = (url) => {
   const address = new URL('/get', 'https://allorigins.hexlet.app');
   address.searchParams.set('disableCache', 'true');
-  address.searchParams.set('url', `${url}`);
-  return axios.get(address);
-};
-
-const createLink = (state) => {
-  const links = state.feeds.map(({ url }) => url);
-  return links;
+  address.searchParams.set('url', url);
+  return address;
 };
 
 const prepareRssContent = (rssContent, url) => {
@@ -90,29 +85,31 @@ export default () => {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = new FormData(e.target);
-        const url = data.get('url');
-        const links = createLink(state);
+        const currentUrl = data.get('url');
+        const links = state.feeds.map(({ url }) => url);
         watchedState.form.state = 'processing';
-        checkValidate(url, links)
+        checkValidate(currentUrl, links)
           .then(() => {
             watchedState.form.state = 'processed';
             watchedState.downloadProcess.state = 'processing';
-            contentUpload(url)
+            axios.get(createProxy(currentUrl))
               .then((response) => {
-                const rssData = prepareRssContent(rssParse(response), url);
+                const rssData = prepareRssContent(rssParse(response), currentUrl);
                 watchedState.downloadProcess.state = 'processed';
                 watchedState.feeds.push(rssData.feed);
                 watchedState.posts.push(...rssData.posts);
-                form.reset();
               })
-              .catch((er) => {
-                watchedState.downloadProcess.errors = er;
+              .catch((error) => {
+                if (error.isAxiosError) {
+                  error.message = 'networkError';
+                }
+                watchedState.downloadProcess.errors = error;
                 watchedState.downloadProcess.state = 'failed';
               });
           })
-          .catch((er) => {
-            er.isValidationError = true;
-            watchedState.form.errors = er;
+          .catch((error) => {
+            error.isValidationError = true;
+            watchedState.form.errors = error;
             watchedState.form.state = 'invalid';
           });
       });
@@ -124,6 +121,6 @@ export default () => {
           watchedState.modal.modalID = currentID;
         }
       });
-      checkUpdate(watchedState, contentUpload, prepareRssContent, rssParse);
+      checkUpdate(watchedState, createProxy, prepareRssContent, rssParse);
     });
 };

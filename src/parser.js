@@ -4,6 +4,7 @@ export default (rssStream) => {
   const parseError = rssContent.querySelector('parsererror');
   if (parseError) {
     const error = new Error(parseError.textContent);
+    error.message = 'invalidRSS';
     error.isParsingError = true;
     throw error;
   }

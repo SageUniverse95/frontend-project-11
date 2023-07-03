@@ -1,24 +1,20 @@
-const checkUpdate = (watchedState, contentUpload, prepareRssContent, rssParse) => {
-  const promises = [];
+import axios from 'axios';
+
+const checkUpdate = (state, createProxy, prepareRssContent, rssParse) => {
+  let promises = [];
   setTimeout(() => {
-    if (watchedState.feeds.length) {
-      const allUrls = watchedState.feeds;
-      allUrls.forEach(({ url }) => {
-        promises.push(contentUpload(url));
-        promises.forEach((promise) => {
-          promise.then((responce) => {
-            const current = prepareRssContent(rssParse(responce), url);
-            const oldPosts = watchedState.posts;
-            const oldTitles = new Set(oldPosts.map((post) => post.titlePost));
-            const items = current.posts.filter(({ titlePost }) => !oldTitles.has(titlePost));
-            watchedState.posts.push(...items);
-          })
-            .catch(() => {});
-        });
-      });
+    if (state.feeds.length) {
+      promises = state.feeds.map(({ url }) => axios.get(createProxy(url)).then((responce) => {
+        const current = prepareRssContent(rssParse(responce), url);
+        const oldPosts = state.posts;
+        const oldTitles = new Set(oldPosts.map((post) => post.titlePost));
+        const items = current.posts.filter(({ titlePost }) => !oldTitles.has(titlePost));
+        state.posts.push(...items);
+      }).catch(() => {}));
     }
     Promise.all(promises)
-      .finally(() => checkUpdate(watchedState, contentUpload, prepareRssContent, rssParse));
+      .finally(() => checkUpdate(state, createProxy, prepareRssContent, rssParse));
   }, 5000);
 };
+
 export default checkUpdate;
